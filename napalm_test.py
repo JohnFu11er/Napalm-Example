@@ -1,11 +1,12 @@
 import napalm
 import json
 import time
-from getpass import getpass
+import getpass
+
+my_user = input("Username: ")
+my_password = getpass.getpass()
 
 t = time.time()
-
-my_password = getpass()
 
 routers = [
     '192.168.99.126',
@@ -20,7 +21,7 @@ def get_interface_data(router):
 
     device = driver(
         hostname = router,
-        username = 'your username goes here',   # enter your username for the cli
+        username = my_user,
         password = my_password
     )
 
@@ -66,6 +67,8 @@ full_dict = {}
 for router in routers:
     full_dict.update(get_interface_data(router))
 
+print("\n******************************\n")
 print(json.dumps(full_dict, indent=4))
 
+print("\n******************************\n")
 print(f'Time taken: {time.time() - t}')
