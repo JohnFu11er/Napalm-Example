@@ -1,50 +1,48 @@
 import napalm
 import json
 import time
+from getpass import getpass
 
 t = time.time()
 
-# input a list of your target routers
+my_password = getpass()
+
 routers = [
     '192.168.99.126',
     '192.168.99.127'
 ]
 
-# tells napalm that you are talking to cisco devices
-driver = napalm.get_network_driver('ios')
+def get_interface_data(router):
 
-final_dict = {}
+    driver = napalm.get_network_driver('ios')
 
-for router in routers:
+    final_dict = {}
+
     device = driver(
         hostname = router,
-        username = 'your username goes here',    # enter the cli username
-        password = 'your password goes here'     # enter the cli password
+        username = 'your username goes here',   # enter your username for the cli
+        password = my_password
     )
-    
-    # connect to device
+
     print(f'Opening {router}')
     device.open()
 
-    # fetch data from the device and create a list of only the tunnel interfaces
     print('Fetching data...')
     tunnel_data = [i for i in device.get_facts()['interface_list'] if 'Tunnel' in i]
 
     final_dict[router] = {}
 
     for tunnel in tunnel_data:
-        command = f'sho run interface {tunnel}'    # string to pass to cli
+        command = f'sho run interface {tunnel}'
         data = device.cli(
             [
                 command
             ]
         )
 
-        # builds a list which contains bandwidth, mtu, and delay for each device
         tunnel_data = [i for i in data[command].split("\n") if "band" in i or "mtu" in i or "delay" in i]
         print(tunnel)
 
-        # assigns tunnel_data items to variables
         for item in tunnel_data:
             if 'bandwidth' in item:
                 bandwidth = "".join([i for i in item if i.isnumeric()])
@@ -53,7 +51,6 @@ for router in routers:
             elif 'delay' in item:
                 delay = "".join([i for i in item if i.isnumeric()])
 
-        # builds final layer of final_dict dictionary
         final_dict[router][tunnel] = {
             "bandwidth" : bandwidth,
             "mtu" : mtu,
@@ -62,8 +59,13 @@ for router in routers:
 
     print(f'Closing {router}')
     device.close()
+    return final_dict
+    
 
-print("\n******************************\n")
-print(json.dumps(final_dict, indent=4))
+full_dict = {}
+for router in routers:
+    full_dict.update(get_interface_data(router))
+
+print(json.dumps(full_dict, indent=4))
 
 print(f'Time taken: {time.time() - t}')
