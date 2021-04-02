@@ -1,5 +1,8 @@
 import napalm
 import json
+import time
+
+t = time.time()
 
 # input a list of your target routers
 routers = [
@@ -62,3 +65,5 @@ for router in routers:
 
 print("\n******************************\n")
 print(json.dumps(final_dict, indent=4))
+
+print(f'Time taken: {time.time() - t}')
